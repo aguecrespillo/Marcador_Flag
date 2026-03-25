@@ -1,99 +1,101 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useGameStore } from '../store/useGameStore';
-import { Clock } from 'lucide-react';
+import { Trophy, Clock, RefreshCcw, Share2, Award, Activity } from 'lucide-react';
 
 export const ScoreBoard: React.FC = () => {
-  // Añadimos timeoutTimer, tickTimeout y setTimeoutTimer a la lista
   const { 
-    homeTeam, awayTeam, homeScore, awayScore, 
-    homeTimeouts, awayTimeouts, period, 
-    homeTeamImage, awayTeamImage,
-    timeoutTimer, tickTimeout, setTimeoutTimer 
-  } = useGameStore();
+    homeScore, awayScore, homeTeam, awayTeam, 
+    isFinished, resetGame, homeTimeouts, awayTimeouts, 
+    requestTimeout, timeoutTimer, setTimeoutTimer, history 
+  } = useGameStore() as any;
 
-  // EFECTO: Hace que el contador de timeout baje cada segundo
-  useEffect(() => {
-    if (timeoutTimer === null) return;
+  const shareStats = () => {
+    const stats: Record<string, number> = {};
+    history.forEach((play: any) => { stats[play.playerName] = (stats[play.playerName] || 0) + play.pts; });
 
-    const interval = setInterval(() => {
-      tickTimeout();
-    }, 1000);
+    let statsText = "\n📊 *ESTADÍSTICAS INDIVIDUALES:*\n";
+    Object.entries(stats).forEach(([name, pts]) => { statsText += `🏈 ${name}: ${pts} pts\n`; });
 
-    return () => clearInterval(interval);
-  }, [timeoutTimer, tickTimeout]);
+    let historyText = "\n⏱️ *CRONOLOGÍA:*";
+    history.slice().reverse().forEach((play: any) => {
+      historyText += `\n🏁 ${play.time} (P${play.period}): ${play.playerName} +${play.pts}`;
+    });
 
-  return (
-    <div className="relative w-full max-w-md mx-auto">
-      <div className="grid grid-cols-2 gap-4 w-full p-4 bg-slate-800 rounded-2xl shadow-xl text-white">
-        {/* Home Team */}
-        <div className="flex flex-col items-center p-4 bg-slate-700 rounded-xl border-b-4 border-blue-500">
-          {homeTeamImage ? (
-            <img 
-              src={homeTeamImage} 
-              alt={homeTeam} 
-              className="w-20 h-20 rounded-full object-cover mb-2 border-4 border-blue-500"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center mb-2 text-3xl font-bold">
-              {homeTeam.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <h2 className="text-xl font-bold uppercase tracking-tight mb-2 truncate w-full text-center">
-            {homeTeam}
-          </h2>
-          <div className="text-6xl font-black mb-4">{homeScore}</div>
-          <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-2 rounded-lg">
-            <Clock size={16} className="text-yellow-400" />
-            <span className="text-lg font-bold">{homeTimeouts}</span>
-            <span className="text-xs text-slate-400 uppercase">Timeouts</span>
+    const text = `*ACTA FINAL FLAG FOOTBALL* 🏈\n\n` +
+                 `🏠 ${homeTeam}: *${homeScore}*\n` +
+                 `🚀 ${awayTeam}: *${awayScore}*\n` +
+                 `--------------------------\n` +
+                 statsText + historyText + 
+                 `\n\n_Generado por Alfonso Scoreboard_`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  if (isFinished) {
+    const stats: Record<string, number> = {};
+    history.forEach((play: any) => { stats[play.playerName] = (stats[play.playerName] || 0) + play.pts; });
+    const mvp = Object.entries(stats).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
+
+    return (
+      <div className="bg-slate-900 p-8 rounded-3xl border-4 border-yellow-500 text-center shadow-2xl">
+        <Trophy className="mx-auto text-yellow-500 mb-4" size={48} />
+        <h2 className="text-white text-2xl font-black uppercase mb-8">Final del Partido</h2>
+        
+        <div className="flex justify-around items-center mb-10 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+          <div className="text-center">
+            <div className="text-blue-400 font-bold text-[11px] uppercase mb-1">{homeTeam}</div>
+            <div className="text-6xl font-black text-white">{homeScore}</div>
+          </div>
+          <div className="text-slate-700 text-4xl font-light">VS</div>
+          <div className="text-center">
+            <div className="text-red-400 font-bold text-[11px] uppercase mb-1">{awayTeam}</div>
+            <div className="text-6xl font-black text-white">{awayScore}</div>
           </div>
         </div>
 
-        {/* Away Team */}
-        <div className="flex flex-col items-center p-4 bg-slate-700 rounded-xl border-b-4 border-red-500">
-          {awayTeamImage ? (
-            <img 
-              src={awayTeamImage} 
-              alt={awayTeam} 
-              className="w-20 h-20 rounded-full object-cover mb-2 border-4 border-red-500"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-red-600 flex items-center justify-center mb-2 text-3xl font-bold">
-              {awayTeam.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <h2 className="text-xl font-bold uppercase tracking-tight mb-2 truncate w-full text-center">
-            {awayTeam}
-          </h2>
-          <div className="text-6xl font-black mb-4">{awayScore}</div>
-          <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-2 rounded-lg">
-            <Clock size={16} className="text-yellow-400" />
-            <span className="text-lg font-bold">{awayTimeouts}</span>
-            <span className="text-xs text-slate-400 uppercase">Timeouts</span>
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 mb-8 text-yellow-500 flex items-center justify-center gap-3">
+          <Award size={24} />
+          <div className="text-left leading-tight">
+            <div className="text-[10px] font-black uppercase tracking-widest">Máximo Anotador</div>
+            <div className="font-bold text-lg text-white uppercase">{mvp[0]} ({mvp[1]} pts)</div>
           </div>
         </div>
 
-        {/* Period Indicator */}
-        <div className="col-span-2 flex justify-center items-center py-2 bg-slate-900 rounded-lg">
-          <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-            Periodo {period}
-          </span>
+        <div className="flex flex-col gap-3">
+          <button onClick={shareStats} className="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg shadow-green-900/40 transition-all active:scale-95">
+            <Share2 size={20} /> ENVIAR POR WHATSAPP
+          </button>
+          <button onClick={() => confirm('¿Nuevo partido?') && resetGame()} className="w-full bg-slate-800 text-slate-400 py-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-white hover:text-black transition-all">
+            <RefreshCcw size={16} /> REINICIAR
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {/* PANTALLA DE TIMEOUT (Overlay) */}
+  return (
+    <div className="grid grid-cols-2 gap-4 bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-xl text-white">
+      <div className="text-center p-4 bg-slate-900/50 rounded-2xl border-b-4 border-blue-500">
+        <div className="text-[10px] font-black text-blue-400 uppercase mb-1">{homeTeam}</div>
+        <div className="text-5xl font-black mb-2">{homeScore}</div>
+        <button onClick={() => requestTimeout('home')} disabled={homeTimeouts <= 0} className="flex items-center gap-1 text-[10px] font-bold border border-blue-500/50 text-blue-400 px-3 py-1 rounded-lg">
+          <Clock size={10} /> TO: {homeTimeouts}
+        </button>
+      </div>
+      <div className="text-center p-4 bg-slate-900/50 rounded-2xl border-b-4 border-red-500">
+        <div className="text-[10px] font-black text-red-400 uppercase mb-1">{awayTeam}</div>
+        <div className="text-5xl font-black mb-2">{awayScore}</div>
+        <button onClick={() => requestTimeout('away')} disabled={awayTimeouts <= 0} className="flex items-center gap-1 text-[10px] font-bold border border-red-500/50 text-red-400 px-3 py-1 rounded-lg">
+          <Clock size={10} /> TO: {awayTimeouts}
+        </button>
+      </div>
+
       {timeoutTimer !== null && (
-        <div className="fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[9999] p-4">
-          <h2 className="text-4xl font-black text-white mb-8 uppercase tracking-[0.2em] animate-pulse">
-            TIMEOUT
-          </h2>
-          <div className="text-[15rem] font-black text-yellow-400 leading-none mb-12 drop-shadow-[0_0_30px_rgba(250,204,21,0.4)]">
-            {timeoutTimer}
-          </div>
-          <button 
-            onClick={() => setTimeoutTimer(null)}
-            className="px-12 py-5 bg-red-600 hover:bg-red-700 text-white text-2xl font-black rounded-full transition-all active:scale-90 shadow-[0_0_20px_rgba(220,38,38,0.5)]"
-          >
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+          <Activity size={48} className="text-yellow-500 mb-4 animate-pulse" />
+          <h2 className="text-white text-4xl font-black uppercase tracking-widest">TIMEOUT</h2>
+          <div className="text-[12rem] font-mono font-black text-yellow-400 leading-none">{timeoutTimer}</div>
+          <button onClick={() => setTimeoutTimer(null)} className="mt-8 bg-red-600 text-white px-12 py-4 rounded-full font-black text-2xl border-4 border-red-400 shadow-2xl">
             REANUDAR
           </button>
         </div>

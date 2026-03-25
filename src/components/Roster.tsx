@@ -1,140 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '../store/useGameStore';
-import { UserPlus, Users, X, ChevronDown, ChevronUp, Save, Download } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
 export const Roster: React.FC = () => {
-  const { homeTeam, awayTeam, homeRoster, awayRoster, addPlayer, removePlayer, setRoster } = useGameStore();
-  const [isOpen, setIsOpen] = useState(false);
-  const [newPlayer, setNewPlayer] = useState({ name: '', number: '', team: 'home' as 'home' | 'away' });
+  const { homeRoster, awayRoster, addPlayer } = useGameStore() as any;
+  const [playerName, setPlayerName] = useState('');
+  const [playerNumber, setPlayerNumber] = useState('');
 
-  // Función para guardar los equipos actuales como "Predeterminados"
-  const guardarPredeterminado = () => {
-    const data = { home: homeRoster, away: awayRoster };
-    localStorage.setItem('roster_corsair_default', JSON.stringify(data));
-    alert("Equipos guardados como predeterminados");
-  };
-
-  // Función para cargar los equipos guardados
-  const cargarPredeterminado = () => {
-    const saved = localStorage.getItem('roster_corsair_default');
-    if (saved) {
-      const { home, away } = JSON.parse(saved);
-      setRoster('home', home);
-      setRoster('away', away);
-    } else {
-      alert("No hay equipos guardados todavía");
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPlayer.name && newPlayer.number) {
-      addPlayer(newPlayer.team, {
-        id: Date.now().toString(),
-        name: newPlayer.name,
-        number: newPlayer.number,
-      });
-      setNewPlayer({ ...newPlayer, name: '', number: '' });
-    }
+  const onAdd = (team: 'home' | 'away') => {
+    if (playerName.trim() === '') return;
+    addPlayer(team, { name: playerName, number: playerNumber || '00' });
+    setPlayerName('');
+    setPlayerNumber('');
   };
 
   return (
-    <div className="mt-4 px-4">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-[#eab305] hover:bg-[#d4a004] p-4 rounded-2xl flex items-center justify-between shadow-lg transition-all border-b-4 border-[#b48903]"
-      >
-        <div className="flex items-center gap-3">
-          <Users size={24} className="text-slate-900" />
-          <span className="text-slate-900 font-black uppercase tracking-tight text-lg">
-            Gestión de Equipos ({homeRoster.length + awayRoster.length})
-          </span>
+    <div className="flex flex-col gap-4 mt-6">
+      <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
+        <div className="flex items-center gap-2.5 mb-5 border-b border-slate-800 pb-3">
+          <UserPlus size={18} className="text-yellow-500" />
+          <h3 className="text-[11px] font-black uppercase text-slate-400 tracking-widest">GESTIÓN DE JUGADORES</h3>
         </div>
-        {isOpen ? <ChevronUp className="text-slate-900" /> : <ChevronDown className="text-slate-900" />}
-      </button>
-
-      {isOpen && (
-        <div className="bg-slate-800 mt-2 rounded-2xl p-4 border border-slate-700 animate-in slide-in-from-top-2 duration-300">
-          
-          {/* BOTONES DE MEMORIA */}
-          <div className="flex gap-2 mb-4">
-            <button 
-              onClick={guardarPredeterminado}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 rounded-lg flex items-center justify-center gap-2 border border-slate-600"
-            >
-              <Save size={14} /> GUARDAR PLANTILLA
-            </button>
-            <button 
-              onClick={cargarPredeterminado}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 rounded-lg flex items-center justify-center gap-2 border border-slate-600"
-            >
-              <Download size={14} /> CARGAR PLANTILLA
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-6 bg-slate-900 p-3 rounded-xl border border-slate-700">
-            <input
-              type="text"
-              placeholder="Nombre"
-              value={newPlayer.name}
-              onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
-              className="bg-slate-800 text-white p-3 rounded-lg border border-slate-600 focus:outline-none"
-            />
-            <input
-              type="text"
-              placeholder="Nº"
-              value={newPlayer.number}
-              onChange={(e) => setNewPlayer({ ...newPlayer, number: e.target.value })}
-              className="bg-slate-800 text-white p-3 rounded-lg border border-slate-600 focus:outline-none"
-            />
-            <select
-              value={newPlayer.team}
-              onChange={(e) => setNewPlayer({ ...newPlayer, team: e.target.value as 'home' | 'away' })}
-              className="bg-slate-800 text-white p-3 rounded-lg border border-slate-600"
-            >
-              <option value="home">{homeTeam}</option>
-              <option value="away">{awayTeam}</option>
-            </select>
-            <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2">
-              <UserPlus size={20} /> AÑADIR
-            </button>
-          </form>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="text-[#eab305] font-black uppercase text-sm mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div> {homeTeam}
-              </h4>
-              <div className="space-y-2">
-                {homeRoster.map(p => (
-                  <div key={p.id} className="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
-                    <span className="text-white font-bold"><span className="text-slate-500 mr-2">#{p.number}</span> {p.name}</span>
-                    <button onClick={() => removePlayer('home', p.id)} className="text-slate-600 hover:text-red-500 p-1">
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-[#eab305] font-black uppercase text-sm mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div> {awayTeam}
-              </h4>
-              <div className="space-y-2">
-                {awayRoster.map(p => (
-                  <div key={p.id} className="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
-                    <span className="text-white font-bold"><span className="text-slate-500 mr-2">#{p.number}</span> {p.name}</span>
-                    <button onClick={() => removePlayer('away', p.id)} className="text-slate-600 hover:text-red-500 p-1">
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        <div className="flex gap-2 mb-4">
+          <input type="text" placeholder="Nombre..." value={playerName} onChange={(e) => setPlayerName(e.target.value)} className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500" />
+          <input type="text" placeholder="Nº" value={playerNumber} onChange={(e) => setPlayerNumber(e.target.value)} className="w-16 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white text-center font-bold outline-none" />
         </div>
-      )}
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => onAdd('home')} className="bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-900/40 text-xs tracking-widest uppercase">Añadir Local</button>
+          <button onClick={() => onAdd('away')} className="bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-red-900/40 text-xs tracking-widest uppercase">Añadir Visitante</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/50 min-h-[120px]">
+          <h4 className="text-[10px] font-black text-blue-500 uppercase mb-3 border-b border-blue-500/20 pb-1 tracking-widest">ROSTER LOCAL</h4>
+          {homeRoster.map((p: any) => (
+            <div key={p.id} className="flex justify-between bg-slate-950/60 p-2.5 rounded-lg mb-1.5 border border-slate-800 shadow-inner">
+              <span className="text-slate-400 font-mono text-[11px]">#{p.number}</span>
+              <span className="font-bold text-white uppercase text-[11px]">{p.name}</span>
+            </div>
+          ))}
+        </div>
+        <div className="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/50 min-h-[120px]">
+          <h4 className="text-[10px] font-black text-red-500 uppercase mb-3 border-b border-red-500/20 pb-1 tracking-widest">ROSTER VISITANTE</h4>
+          {awayRoster.map((p: any) => (
+            <div key={p.id} className="flex justify-between bg-slate-950/60 p-2.5 rounded-lg mb-1.5 border border-slate-800 shadow-inner">
+              <span className="text-slate-400 font-mono text-[11px]">#{p.number}</span>
+              <span className="font-bold text-white uppercase text-[11px]">{p.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
